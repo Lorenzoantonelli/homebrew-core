@@ -1,8 +1,6 @@
 class Sshuttle < Formula
-  include Language::Python::Virtualenv
-
   desc "Proxy server that works as a poor man's VPN"
-  homepage "https://github.com/sshuttle/sshuttle"
+  homepage "https://sshuttle.readthedocs.io/en/stable/"
   url "https://files.pythonhosted.org/packages/f1/4d/91c8bff8fabe44cd88edce0b18e874e60f1e11d4e9d37c254f2671e1a3d4/sshuttle-1.1.1.tar.gz"
   sha256 "f5a3ed1e5ab1213c7a6df860af41f1a903ab2cafbfef71f371acdcff21e69ee6"
   license "LGPL-2.1-or-later"
@@ -19,16 +17,24 @@ class Sshuttle < Formula
     sha256 cellar: :any_skip_relocation, x86_64_linux:   "10ee215511c9e5d6dc9d8877715682c4d26177a642b7fcf7777a941a48edf0c3"
   end
 
+  depends_on "python-setuptools" => :build
   depends_on "python@3.12"
 
+  def python3
+    "python3.12"
+  end
+
   def install
-    # Building the docs requires installing
-    # markdown & BeautifulSoup Python modules
-    # so we don't.
-    virtualenv_install_with_resources
+    system python3, "-m", "pip", "install", *std_pip_args, "."
   end
 
   test do
-    system bin/"sshuttle", "-h"
+    assert_match version.to_s, shell_output("#{bin}/sshuttle --version")
+
+    # Could not remove python@3.12 keg!
+    return if OS.linux? && ENV["HOMEBREW_GITHUB_ACTIONS"]
+
+    output = shell_output("#{bin}/sshuttle --dns -r username@sshserver 0/0 2>&1", 99)
+    assert_match "You must be root (or enable su/sudo) to set the firewall", output
   end
 end
