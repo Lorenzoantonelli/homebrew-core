@@ -25,14 +25,14 @@ class Sshuttle < Formula
   end
 
   def install
+    # Workaround to avoid creating libexec/bin/__pycache__ which gets linked to bin
+    ENV["PYTHONPYCACHEPREFIX"] = buildpath/"pycache"
+
     system python3, "-m", "pip", "install", *std_pip_args, "."
   end
 
   test do
     assert_match version.to_s, shell_output("#{bin}/sshuttle --version")
-
-    # Could not remove python@3.12 keg!
-    return if OS.linux? && ENV["HOMEBREW_GITHUB_ACTIONS"]
 
     output = shell_output("#{bin}/sshuttle --dns -r username@sshserver 0/0 2>&1", 99)
     assert_match "You must be root (or enable su/sudo) to set the firewall", output
